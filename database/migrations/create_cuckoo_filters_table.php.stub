@@ -1,0 +1,38 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * Creates the cuckoo_filters table used by the CuckooDriver.
+ *
+ * Schema:
+ *   key           — logical filter name (e.g. "epass_users:holder_profile_lookup")
+ *   num_buckets   — total buckets allocated in this filter
+ *   data          — base64-encoded binary bucket array (num_buckets × 4 bytes)
+ *   element_count — approximate number of elements currently in the filter
+ *
+ * Memory estimate:
+ *   131 072 buckets × 4 slots × 1 byte/slot = 512 KB per filter key.
+ *   That comfortably stores ~200 000 elements at ~0.3% false-positive rate.
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('cuckoo_filters', function (Blueprint $table) {
+            $table->id();
+            $table->string('key')->unique();
+            $table->unsignedInteger('num_buckets');
+            $table->mediumText('data');         // base64(binary bucket array)
+            $table->unsignedInteger('element_count')->default(0);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('cuckoo_filters');
+    }
+};

@@ -1,0 +1,90 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * Creates (or upgrades) the bloom_filters table for the
+ * Counting + Scalable Bloom Filter driver (UPE_DRIVER=mysql, the default).
+ *
+ * Schema:
+ *   id              — auto-increment primary key
+ *   key             — filter namespace (e.g. 'epass_users')
+ *   slice_index     — slice number within a key (scalable growth)
+ *   counter_string  — base-36 counter array; one char per bit position
+ *   element_count   — number of elements added to this slice
+ *   expected_elements — n used when this slice was spawned
+ *   false_positive_rate — p used when this slice was spawned
+ *   timestamps
+ *
+ * Note: bit_string has been removed. counter_string replaces it for all
+ *       drivers. The standard bit-string driver (DatabaseBitStringDriver)
+ *       is considered legacy and should not be used for new projects.
+ *
+ * Run:  php artisan migrate
+ * Rollback: drops the bloom_filters table entirely if it was freshly created,
+ *           or drops the added columns if it was an existing table.
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        // ── Fresh install: create the table from scratch. ─────────────────────
+        if (!Schema::hasTable('bloom_filters')) {
+            Schema::create('bloom_filters', function (Blueprint $table) {
+                $table->id();
+                $table->string('key');
+                $table->unsignedTinyInteger('slice_index')->default(0);
+                $table->mediumText('counter_string')->nullable();  // base-36 counting filter
+                $table->unsignedInteger('element_count')->default(0);
+                $table->unsignedInteger('expected_elements');
+                $table->double('false_positive_rate');
+                $table->timestamps();
+
+                $table->unique(['key', 'slice_index']);
+            });
+            return;
+        }
+
+        // ── Upgrade existing table: add missing columns. ──────────────────────
+        Schema::table('bloom_filters', function (Blueprint $table) {
+            if (!Schema::hasColumn('bloom_filters', 'slice_index')) {
+                $table->unsignedTinyInteger('slice_index')->default(0)->after('key');
+            }
+            if (!Schema::hasColumn('bloom_filters', 'counter_string')) {
+                $table->mediumText('counter_string')->nullable()->after('key');
+            }
+            if (!Schema::hasColumn('bloom_filters', 'element_count')) {
+                $table->unsignedInteger('element_count')->default(0)->after('counter_string');
+            }
+
+            // Drop the legacy bit_string column if it still exists.
+            if (Schema::hasColumn('bloom_filters', 'bit_string')) {
+                $table->dropColumn('bit_string');
+            }
+        });
+
+        // Replace unique key on (key) with composite (key, slice_index).
+        try {
+            Schema::table('bloom_filters', function (Blueprint $table) {
+                $table->dropUnique(['key']);
+            });
+        } catch (\Throwable) {
+            // Already dropped or named differently — safe to ignore.
+        }
+
+        try {
+            Schema::table('bloom_filters', function (Blueprint $table) {
+                $table->unique(['key', 'slice_index']);
+            });
+        } catch (\Throwable) {
+            // Already exists — safe to ignore.
+        }
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('bloom_filters');
+    }
+};
