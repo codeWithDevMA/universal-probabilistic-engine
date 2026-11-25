@@ -1,0 +1,43 @@
+{
+    "name": "ghazali/universal-probabilistic-engine",
+    "description": "Universal Probabilistic Engine (UPE) providing O(1) Bloom Filter shielding and high-speed CRUD operations for Laravel.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ghazali",
+            "email": "ghazali@example.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "spatie/laravel-package-tools": "^1.16",
+        "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/database": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/console": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/redis": "^10.0|^11.0|^12.0|^13.0"
+    },
+    "require-dev": {
+        "laravel/framework": "^10.0|^11.0|^12.0|^13.0",
+        "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
+        "phpunit/phpunit": "^10.0|^11.0|^12.0",
+        "nunomaduro/collision": "^7.0|^8.0",
+        "mockery/mockery": "^1.6",
+        "fakerphp/faker": "^1.23",
+        "laravel/pint": "^1.0",
+        "laravel/tinker": "^2.9|^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ghazali\\UniversalProbabilisticEngine\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ghazali\\UniversalProbabilisticEngine\\UpeServiceProvider"
+            ]
+        }
+    }
+}
